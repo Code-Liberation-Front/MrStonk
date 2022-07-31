@@ -1,10 +1,12 @@
 #cogs.Stockpull runs all of the message commands for stock pulling for MrStonk
+from datetime import date
 import nextcord
 from nextcord.ext import commands
 import yfinance
 import config
 import io
 import matplotlib.pyplot as plt
+import finnhub
 
 extension = config.extension
 
@@ -14,10 +16,18 @@ class Stockpull(commands.Cog):
         print("Stockpull initialized Successfully")
     
     @commands.command(pass_context = True)
-    async def stock(self, ctx, ticker):
+    async def stock(self, ctx, ticker:str):
         data_stream = io.BytesIO()
-        tickerdata = yfinance.Ticker(ticker)
-        compinfo = tickerdata.get_info()
+        company = True
+        finclient = finnhub.Client(api_key=config.APIKey)
+        compinfo = finclient.company_profile2(symbol=ticker)
+        if not compinfo:
+            symbol = finclient.symbol_lookup(ticker)
+            company = False
+            for counter in range(0, symbol["count"]):
+                if symbol["result"][counter]["symbol"] == ticker.upper():
+                    compinfo = symbol["result"][counter]
+                    compinfo["name"] = compinfo["description"]
         data = yfinance.download(tickers=ticker, period='1d', interval='1m')
         totaldata = yfinance.download(tickers=ticker)
         yclose = totaldata.tail(2)['Close'].values[0]
@@ -38,9 +48,19 @@ class Stockpull(commands.Cog):
         plt.close()
         data_stream.seek(0)
         chart = nextcord.File(data_stream, filename=f"{ticker}.png")
-        embed = nextcord.Embed(title=compinfo["shortName"], description=(f"{round(current, 2)} USD"), colour=color)
-        embed.add_field(name="Loss/Gain", inline=False, value=(f"{round(current-yclose, 2)} ({percentage}%)"), )
+        embed = nextcord.Embed(title=compinfo["name"], description=(f"{round(current, 2)} USD"), colour=color)
+        embed.add_field(name="Loss/Gain", value=(f"{round(current-yclose, 2)} ({percentage}%)"), )
+        if company:
+            embed.set_thumbnail(url=compinfo["logo"])
+            embed.add_field(name="Sector", value=compinfo["finnhubIndustry"])
         embed.set_image(url=f"attachment://{ticker}.png")
+        if company:
+            dates = str(date.today())
+            embed.add_field(name="Exchange", value=compinfo["exchange"], inline=False)
+            news = finclient.company_news(ticker, _from=dates, to=dates)
+            for counter in range(0, 3):
+                if counter < len(news):
+                    embed.add_field(name=news[counter]["headline"], value=news[counter]["url"], inline=False)
         await ctx.send(embed=embed, file=chart)
 
 def setup(client):

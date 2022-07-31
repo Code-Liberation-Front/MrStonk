@@ -19,15 +19,15 @@ configgen.generateConfiguration('%', True, 'TOKEN', 'TOKEN')
 import config
 Token = config.Token
 extensions = config.extension
-seanToken = config.seanToken
+APIKey = config.APIKey
 
 #This allows for the token through be inputted through command line arguments with syntax --token TOKEN
 if args.token != None:
-    configgen.generateConfiguration('%', False, args.token, seanToken)
+    configgen.generateConfiguration('%', False, args.token, APIKey)
     importlib.reload(config)
     Token = config.Token
     extensions = config.extension
-    seanToken = config.seanToken
+    APIKey = config.APIKey
 
 #Defines the Intents necessary for the bot to communicate with the discord API
 #Also allows the bot to have the permissions needed to run all of its functions
@@ -45,11 +45,11 @@ while len(Token) <= 70:
     bottoken = input()
     os.system('clear')
     os.remove("config.py")
-    configgen.generateConfiguration('%', False, bottoken, seanToken)
+    configgen.generateConfiguration('%', False, bottoken, APIKey)
     importlib.reload(config)
     Token = config.Token
     extensions = config.extension
-    seanToken = config.seanToken
+    APIKey = config.APIKey
 
 #This sets the working directory for this section of the program
 pwd = os.path.dirname(os.path.realpath(__file__))

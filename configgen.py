@@ -8,4 +8,4 @@ def generateConfiguration(extension, newfile, Token, seanToken):
         with open('config.py', 'w') as files:
             files.write('Token = \'' + Token + '\'\n')
             files.write('extension = \'' + extension + '\'\n')
-            files.write(('seanToken = \'' + seanToken + '\'\n'))
+            files.write(('APIKey = \'' + seanToken + '\'\n'))
