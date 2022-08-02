@@ -1,5 +1,7 @@
 #cogs.Stockpull runs all of the message commands for stock pulling for MrStonk
 from datetime import date
+from datetime import datetime
+from time import time
 import nextcord
 from nextcord.ext import commands
 import yfinance
@@ -30,7 +32,11 @@ class Stockpull(commands.Cog):
                     compinfo["name"] = compinfo["description"]
         data = yfinance.download(tickers=ticker, period='1d', interval='1m')
         totaldata = yfinance.download(tickers=ticker)
-        yclose = totaldata.tail(2)['Close'].values[0]
+        time = datetime.now()
+        if time.hour>9 and time.hour<16:
+            yclose = totaldata.tail(2)['Close'].values[1]
+        else:
+            yclose = totaldata.tail(2)['Close'].values[0]
         current = data.tail(1)['Open'].values[0]
         percentage = -1 * round((1-(current/yclose)) * 100, 2)
         if(current-yclose) < 0:
@@ -49,10 +55,10 @@ class Stockpull(commands.Cog):
         data_stream.seek(0)
         chart = nextcord.File(data_stream, filename=f"{ticker}.png")
         embed = nextcord.Embed(title=compinfo["name"], description=(f"{round(current, 2)} USD"), colour=color)
-        embed.add_field(name="Loss/Gain", value=(f"{round(current-yclose, 2)} ({percentage}%)"), )
+        embed.add_field(name="Loss/Gain", value=(f"{round(current-yclose, 2)} ({percentage}%)"), inline=True)
         if company:
             embed.set_thumbnail(url=compinfo["logo"])
-            embed.add_field(name="Sector", value=compinfo["finnhubIndustry"])
+            embed.add_field(name="Sector", value=compinfo["finnhubIndustry"], inline=True)
         embed.set_image(url=f"attachment://{ticker}.png")
         if company:
             dates = str(date.today())
