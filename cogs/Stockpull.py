@@ -31,14 +31,10 @@ class Stockpull(commands.Cog):
                     compinfo = symbol["result"][counter]
                     compinfo["name"] = compinfo["description"]
         data = yfinance.download(tickers=ticker, period='1d', interval='1m')
-        totaldata = yfinance.download(tickers=ticker)
-        time = datetime.now()
-        if time.hour>9 and time.hour<16:
-            yclose = totaldata.tail(2)['Close'].values[1]
-        else:
-            yclose = totaldata.tail(2)['Close'].values[0]
+        difference = finclient.quote(ticker.upper())
+        yclose = difference["pc"]
         current = data.tail(1)['Open'].values[0]
-        percentage = -1 * round((1-(current/yclose)) * 100, 2)
+        percentage = round(difference["dp"], 2)
         if(current-yclose) < 0:
             color = 0xff0000
         else:
@@ -55,7 +51,7 @@ class Stockpull(commands.Cog):
         data_stream.seek(0)
         chart = nextcord.File(data_stream, filename=f"{ticker}.png")
         embed = nextcord.Embed(title=compinfo["name"], description=(f"{round(current, 2)} USD"), colour=color)
-        embed.add_field(name="Loss/Gain", value=(f"{round(current-yclose, 2)} ({percentage}%)"), inline=True)
+        embed.add_field(name="Loss/Gain", value=(f"{difference['d']} ({percentage}%)"), inline=True)
         if company:
             embed.set_thumbnail(url=compinfo["logo"])
             embed.add_field(name="Sector", value=compinfo["finnhubIndustry"], inline=True)
