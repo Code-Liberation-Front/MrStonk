@@ -1,5 +1,6 @@
-#cogs.Stockpull runs all of the message commands for stock pulling for MrStonk
+#cogs.Slashstockpull runs all of the message commands for stock pulling for MrStonk
 from datetime import date
+from discord import Interaction
 import nextcord
 from nextcord.ext import commands
 import yfinance
@@ -10,14 +11,14 @@ import finnhub
 
 extension = config.extension
 
-class Stockpull(commands.Cog):
+class Slashstockpull(commands.Cog):
 
     def __init__(self, client):
-        print("Stockpull initialized Successfully")
+        print("Slashstockpull initialized Successfully")
         self.client = client
     
-    @commands.command(pass_context = True)
-    async def stock(self, ctx, ticker:str):
+    @nextcord.slash_command(name="stock", description="Pulls stock data for a specified ticker")
+    async def stock(self, interaction : Interaction, ticker:str):
         data_stream = io.BytesIO()
         company = True
         finclient = finnhub.Client(api_key=config.APIKey)
@@ -62,7 +63,7 @@ class Stockpull(commands.Cog):
             for counter in range(0, 3):
                 if counter < len(news):
                     embed.add_field(name=news[counter]["headline"], value=news[counter]["url"], inline=False)
-        await ctx.send(embed=embed, file=chart)
+        await interaction.response.send_message(embed=embed, file=chart)
 
 def setup(client):
-    client.add_cog(Stockpull(client))
+    client.add_cog(Slashstockpull(client))
