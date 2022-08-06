@@ -1,7 +1,5 @@
 #cogs.Stockpull runs all of the message commands for stock pulling for MrStonk
 from datetime import date
-from click import pass_context
-from matplotlib.ticker import TickHelper
 import nextcord
 from nextcord.ext import commands
 import yfinance
@@ -67,25 +65,34 @@ class Stockpull(commands.Cog):
         await ctx.send(embed=embed, file=chart)
 
     @commands.command(pass_context=True)
-    async def stats(self, ctx, ticker:str):
+    async def stats(self, ctx, ticker:str, time):
         data_stream = io.BytesIO()
-        data = yfinance.download(tickers=ticker, period='3mo', interval='1d')
-        datall = yfinance.download(tickers=ticker)
+        data = yfinance.download(tickers=ticker, period=time, interval='1d')
+        company = True
         compinfo = self.finclient.company_profile2(symbol=ticker)
         if not compinfo:
             symbol = self.finclient.symbol_lookup(ticker)
+            company = False
             for counter in range(0, symbol["count"]):
                 if symbol["result"][counter]["symbol"] == ticker.upper():
                     compinfo = symbol["result"][counter]
                     compinfo["name"] = compinfo["description"]
-        hundredavg = (datall.tail(100)["Close"].sum()/100)
-        fiftyavg = (datall.tail(50)["Close"].sum()/50)
         plt.figure(figsize=(10,5))
-        plt.plot(data.index, data["Close"], label="Three Month Graph")
+        plt.plot(data.index, data["Close"])
         plt.xlabel("Datetime")
         plt.ylabel("Price (USD)")
-        plt.plot([data.head(1).index, data.tail(1).index], [hundredavg, hundredavg], dashes = (4,5), label="Hundred Day Avg")
-        plt.plot([data.head(1).index, data.tail(1).index], [fiftyavg, fiftyavg], dashes = (4,5), label="Fifty Day Avg")
+        closedata = data["Close"].tolist()
+        closeindex = data.index.tolist()
+        fiftyday = []
+        twohunday = []
+        fiftyday.append((closedata[1]*(2/(1+50)))+(closedata[0]*(1-(2/(1+50)))))
+        twohunday.append((closedata[1]*(2/(1+200)))+(closedata[0]*(1-(2/(1+200)))))
+        for index in range(1, len(closedata)-1):
+            fiftyday.append((closedata[index]*(2/(1+50)))+(fiftyday[index-1]*(1-(2/(1+50)))))
+            twohunday.append((closedata[index]*(2/(1+200)))+(twohunday[index-1]*(1-(2/(1+200)))))
+        closeindex.pop(0)
+        plt.plot(closeindex, fiftyday, label = "Fifty Day Avg")
+        plt.plot(closeindex, twohunday, label = "Two Hundred Day Avg")
         leg = plt.legend(loc='upper center')
         plt.savefig(data_stream, format = 'png', dpi = 80, bbox_inches="tight")
         plt.close()
@@ -93,6 +100,8 @@ class Stockpull(commands.Cog):
         chart = nextcord.File(data_stream, filename=f"{ticker}.png")
         embed = nextcord.Embed(title=f"{compinfo['name']} ({ticker.upper()})")
         embed.set_image(url=f"attachment://{ticker}.png")
+        if company:
+            embed.set_thumbnail(url=compinfo["logo"])
         await ctx.send(embed=embed, file=chart)
 
 def setup(client):
