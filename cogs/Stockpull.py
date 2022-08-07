@@ -78,7 +78,7 @@ class Stockpull(commands.Cog):
                     compinfo = symbol["result"][counter]
                     compinfo["name"] = compinfo["description"]
         plt.figure(figsize=(10,5))
-        plt.plot(data.index, data["Close"])
+        plt.plot(data.index, data["Close"], color = "blue")
         plt.xlabel("Datetime")
         plt.ylabel("Price (USD)")
         closedata = data["Close"].tolist()
@@ -91,8 +91,8 @@ class Stockpull(commands.Cog):
             fiftyday.append((closedata[index]*(2/(1+50)))+(fiftyday[index-1]*(1-(2/(1+50)))))
             twohunday.append((closedata[index]*(2/(1+200)))+(twohunday[index-1]*(1-(2/(1+200)))))
         closeindex.pop(0)
-        plt.plot(closeindex, fiftyday, label = "Fifty Day Avg")
-        plt.plot(closeindex, twohunday, label = "Two Hundred Day Avg")
+        plt.plot(closeindex, fiftyday, label = "Fifty Day Avg", color = "green")
+        plt.plot(closeindex, twohunday, label = "Two Hundred Day Avg", color = "red")
         leg = plt.legend(loc='upper center')
         plt.savefig(data_stream, format = 'png', dpi = 80, bbox_inches="tight")
         plt.close()
